@@ -3,6 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+.DS_Store
+settings.yaml
+*.jpg
+*,jpeg
 # C extensions
 *.so
 
