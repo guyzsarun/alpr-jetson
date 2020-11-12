@@ -11,42 +11,16 @@ import numpy as np
 from imutils.video import FPS
 from openalpr import Alpr
 
+from utils import gstreamer_pipeline, check_thread_alive, send_picture
 
+delay=5
 
 cap_width=1920
 cap_height=1080
 
 net = jetson.inference.detectNet("ssd-mobilenet-v2", threshold=0.5)
+
 alpr = Alpr("us", "/etc/openalpr/openalpr.conf","/usr/share/openalpr/runtime_data")
-os.system('sudo service nvargus-daemon restart')
-
-def gstreamer_pipeline(
-    capture_width=cap_width,
-    capture_height=cap_height,
-    display_width=960,
-    display_height=616,
-    framerate=30/1,
-    flip_method=0,
-):
-    return (
-        "nvarguscamerasrc ! "
-        "video/x-raw(memory:NVMM), "
-        "width=(int)%d, height=(int)%d, "
-        "format=(string)NV12, framerate=(fraction)%d/1 ! "
-        "nvvidconv flip-method=%d ! "
-        "video/x-raw, width=(int)%d, height=(int)%d, format=(string)BGRx ! "
-        "videoconvert ! "
-        "video/x-raw, format=(string)BGR ! appsink"
-        % (
-            capture_width,
-            capture_height,
-            framerate,
-            flip_method,
-            display_width,
-            display_height,
-        )
-    )
-
 
 def detect(img):
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGBA).astype(np.float32)
@@ -65,13 +39,6 @@ def get_bbox(detection):
 def detect_plate(crop_frame):
     return alpr.recognize_ndarray(crop_frame)
 
-
-def send_picture(frame):
-    cv2.imwrite('temp.jpg',frame)
-    url = 'http://172.28.253.160:8000'
-    files = {'media': open('temp.jpg', 'rb')}
-    return requests.post(url, files=files)
-
 def calculate_vote(arr):
     results=None
     if arr:
@@ -81,16 +48,17 @@ def calculate_vote(arr):
     return results,[]
 
 def main():
-    cap = cv2.VideoCapture(gstreamer_pipeline(flip_method=0), cv2.CAP_GSTREAMER)
+    cap = cv2.VideoCapture(gstreamer_pipeline(capture_width=cap_width,capture_height=cap_height,flip_method=0), cv2.CAP_GSTREAMER)
     #cap = cv2.VideoCapture('../video-test2.mp4')
     if cap.isOpened():
-        window_handle = cv2.namedWindow("CSI Camera", cv2.WINDOW_AUTOSIZE)
+        window_handle = cv2.namedWindow("frame", cv2.WINDOW_AUTOSIZE)
         # Window
         fps_i=None
         detection=0
         empty_frame=0
         arr=[]
-        while cv2.getWindowProperty("CSI Camera", 0) >= 0:
+        th = threading.Thread(target=send_picture, args=(None,delay))
+        while cv2.getWindowProperty("frame", 0) >= 0:
             fps=FPS().start()
             ret_val, img = cap.read()
             frame = img.copy()
@@ -117,12 +85,16 @@ def main():
                 cv2.rectangle(frame,(x1,y1),(x2,y2),(255,0,0),4)
 
             if detection>=10:
-                results,arr=calculate_vote(arr)
-                send_picture(frame)
-                print(results)
                 detection=0
+                if not check_thread_alive(th):
+                    results,arr=calculate_vote(arr)
+                    th = threading.Thread(target=send_picture, args=(frame,delay))
+                    th.start()
+                    print(results)
+                else:
+                    pass
 
-            cv2.imshow("CSI Camera", img)
+            cv2.imshow("frame", img)
             if fps_i is None:
                     fps_i=0
 
@@ -138,7 +110,6 @@ def main():
         cv2.destroyAllWindows()
     else:
         print("Unable to open camera")
-
 
 if __name__ == "__main__":
     main()
