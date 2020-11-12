@@ -33,7 +33,7 @@ def gstreamer_pipeline(
     )
 
 def send_picture(frame,delay):
-    if frame:
+    if frame is not None:
         cv2.imwrite('temp.jpg',frame)
         url = 'http://172.28.253.160:8000'
         files = {'media': open('temp.jpg', 'rb')}
@@ -43,3 +43,11 @@ def send_picture(frame,delay):
 def check_thread_alive(thr):
     thr.join(timeout=0.0)
     return thr.is_alive()
+
+def calculate_vote(arr):
+    results=None
+    if arr:
+        stats={i:arr.count(i) for i in arr}
+        results=max(stats, key=lambda key: stats[key])
+
+    return results,[]
