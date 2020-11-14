@@ -36,7 +36,7 @@ def get_bbox(detection):
     return  num,x1,y1,x2,y2
 
 def main():
-    cap = cv2.VideoCapture(gstreamer_pipeline(capture_width=cap_width,capture_height=cap_height,flip_method=0), cv2.CAP_GSTREAMER)
+    cap = cv2.VideoCapture(gstreamer_pipeline(capture_width=cap_width,capture_height=cap_height,flip_method=2), cv2.CAP_GSTREAMER)
     #cap = cv2.VideoCapture('../video-test2.mp4')
     if cap.isOpened():
         window_handle = cv2.namedWindow("frame", cv2.WINDOW_AUTOSIZE)
@@ -46,7 +46,7 @@ def main():
         empty_frame=0
         arr=[]
 
-        th = threading.Thread(target=send_picture, args=(None,delay))
+        th = threading.Thread(target=send_picture, args=(None,None,delay))
         th.start()
 
         while cv2.getWindowProperty("frame", 0) >= 0:
@@ -57,6 +57,8 @@ def main():
             frame = img.copy()
             img,detections=detect(img)
 
+            #print("# detected : ",len(detections))
+
             for i in range(len(detections)):
                 num,x1,y1,x2,y2=get_bbox(detections[i])
 
@@ -64,6 +66,7 @@ def main():
                     detection=detection+1
                     crop = frame[y1:y2,x1:x2]
                     results=detect_plate(crop)
+                    #print(results)
 
                     if results['results']:
                         arr=accum_vote(results['results'],arr)
@@ -73,11 +76,11 @@ def main():
             if detection>=10:
                 detection=0
                 if not check_thread_alive(th):
-                    th = threading.Thread(target=send_picture, args=(frame,delay))
-                    th.start()
                     results,arr=calculate_vote(arr)
 
-                    ## TODO Send to backend
+                    th = threading.Thread(target=send_picture, args=(frame,results,delay))
+                    th.start()
+
                     print(results)
                 else:
                     pass
