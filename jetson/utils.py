@@ -32,12 +32,13 @@ def gstreamer_pipeline(
         )
     )
 
-def send_picture(frame,delay):
+def send_picture(frame,lp,delay):
     if frame is not None:
         cv2.imwrite('temp.jpg',frame)
-        url = 'http://172.28.253.160:8000'
+        url = 'http://172.28.110.23:8000'
         files = {'media': open('temp.jpg', 'rb')}
-        requests.post(url, files=files)
+        values = {'lp':lp}
+        requests.post(url, files=files,data=values)
         time.sleep(delay)
 
 def check_thread_alive(thr):
