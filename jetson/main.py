@@ -77,10 +77,8 @@ def main():
                 detection=0
                 if not check_thread_alive(th):
                     results,arr=calculate_vote(arr)
-
                     th = threading.Thread(target=send_picture, args=(frame,results,delay))
                     th.start()
-
                     print(results)
                 else:
                     pass

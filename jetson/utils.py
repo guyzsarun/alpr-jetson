@@ -38,7 +38,10 @@ def send_picture(frame,lp,delay):
         url = 'http://172.28.110.23:8000'
         files = {'media': open('temp.jpg', 'rb')}
         values = {'lp':lp}
-        requests.post(url, files=files,data=values)
+        try:
+            requests.post(url, files=files,data=values,timeout=3)
+        except requests.ConnectionError:
+            pass
         time.sleep(delay)
 
 def check_thread_alive(thr):
