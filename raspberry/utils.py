@@ -14,28 +14,28 @@ URL=settings.URL
 TOKEN=settings.TOKEN
 TF_SERVING=settings.TF_SERVING_URL
 
+bf=cv2.BFMatcher()
+sift=cv2.xfeatures2d.SIFT_create()
+
 def lp_mapping(img,lp):
-    img=cv2.imread(img)
-    img=cv2.cvtColor(img,cv2.COLOR_BGR2RGB)
+    lp=np.float32(lp)
+    img=np.float32(img)
 
     lp_gray=cv2.cvtColor(np.uint8(lp*255),cv2.COLOR_RGB2GRAY)
-    img_gray=cv2.cvtColor(np.uint8(img),cv2.COLOR_RGB2GRAY)
-
-    sift=cv2.xfeatures2d.SIFT_create()
+    img_gray=cv2.cvtColor(np.uint8(img*255),cv2.COLOR_RGB2GRAY)
 
     kp1,des1=sift.detectAndCompute(lp_gray,None)
     kp2,des2=sift.detectAndCompute(img_gray,None)
-
-    bf=cv2.BFMatcher()
     matches = bf.knnMatch(des1,des2, k=2)
 
+    # Apply ratio test
     good = []
     for match1,match2 in matches:
         #Less distance good match
-        if match1.distance < 0.60*match2.distance:
+        if match1.distance < 0.70*match2.distance:
             good.append([match1])
 
-    return cv2.drawMatchesKnn(lp,kp1,img/255,kp2,good,None,flags=2).clip(max=1)
+    return cv2.drawMatchesKnn(np.uint8(lp*255),kp1,np.uint8(img*255),kp2,good,None,flags=2)/255
 
 def line_notify(msg, payload=None, notifyDisable=False):
     headers = {"Authorization": "Bearer " + TOKEN}

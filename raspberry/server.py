@@ -23,9 +23,25 @@ def notify():
     file = request.files['media']
     lp=request.form['lp']
     file.save('tmp.jpg')
+    img = cv2.imread('tmp.jpg')
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)/255
 
+    th = threading.Thread(target=post_process,args=(lp,img,'tmp.jpg'))
+    th.start()
+    return '200 OK'
+
+@app.route("/steam")
+def streamFrames():
+    return Response(encodeFrame(), mimetype = "multipart/x-mixed-replace; boundary=frame")
+
+@app.route("/open")
+def open_gate():
+    print('open gate')
+    return '200 OK'
+
+def post_process(lp,img,img_path):
     try:
-        lp_img, cors = get_plate_rest('tmp.jpg')
+        lp_img, cors = get_plate_rest(img_path)
     except:
         lp_img = None
 
@@ -35,17 +51,13 @@ def notify():
         msg="LP : "+lp
 
     if lp_img is None:
-        line_notify(msg,'tmp.jpg',False)
+        line_notify(msg,img_path,False)
     else:
-        lp_map_img=lp_mapping('tmp.jpg',lp_img[0])
+        lp_map_img=lp_mapping(img,lp_img[0])
         plt.imsave('lp.jpg',lp_map_img)
         line_notify(msg,'lp.jpg',False)
 
-    return '200 OK'
 
-@app.route("/steam")
-def streamFrames():
-    return Response(encodeFrame(), mimetype = "multipart/x-mixed-replace; boundary=frame")
 
 def encodeFrame():
     global thread_lock
