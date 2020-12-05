@@ -34,12 +34,13 @@ def gstreamer_pipeline(
 
 def send_picture(frame,lp,delay):
     if frame is not None:
+        frame = cv2.resize(frame, (0,0), fx=0.6, fy=0.6)
         cv2.imwrite('temp.jpg',frame)
         url = 'http://172.28.110.23:8000'
         files = {'media': open('temp.jpg', 'rb')}
         values = {'lp':lp}
         try:
-            requests.post(url, files=files,data=values,timeout=3)
+            requests.post(url, files=files,data=values,timeout=8)
         except requests.ConnectionError:
             pass
         time.sleep(delay)

@@ -14,7 +14,7 @@ from utils import gstreamer_pipeline, check_thread_alive, send_picture, calculat
 from alpr import detect_plate,accum_vote
 
 
-delay=5
+delay=10
 
 cap_width=1920
 cap_height=1080
