@@ -47,6 +47,11 @@ def notify():
 def streamFrames():
     return Response(encodeFrame(), mimetype = "multipart/x-mixed-replace; boundary=frame")
 
+@app.route("/open")
+def open_gate():
+    print('open gate')
+    return '200 OK'
+
 def encodeFrame():
     global thread_lock
     while True:
