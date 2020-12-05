@@ -1,12 +1,13 @@
 import threading
 
+import matplotlib.pyplot as plt
 from datetime import datetime
 import cv2
 from flask import Response, Flask, request
 from imutils.video import FPS
 from imutils.video import WebcamVideoStream
 
-from utils import line_notify
+from utils import line_notify,get_plate_rest,lp_mapping
 
 global video_frame
 global fps_i
@@ -23,9 +24,23 @@ def notify():
     lp=request.form['lp']
     file.save('tmp.jpg')
 
-    msg="LP : "+lp
+    try:
+        lp_img, cors = get_plate_rest('tmp.jpg')
+    except:
+        lp_img = None
 
-    line_notify(msg,'tmp.jpg',False)
+    if len(lp)==0:
+        msg="LP : Not detected"
+    else:
+        msg="LP : "+lp
+
+    if lp_img is None:
+        line_notify(msg,'tmp.jpg',False)
+    else:
+        lp_map_img=lp_mapping('tmp.jpg',lp_img[0])
+        plt.imsave('lp.jpg',lp_map_img)
+        line_notify(msg,'lp.jpg',False)
+
     return '200 OK'
 
 @app.route("/steam")
