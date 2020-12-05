@@ -3,6 +3,8 @@ import cv2
 import time
 import requests
 
+RPI_URL = 'http://172.28.110.23:8000'
+
 os.system('sudo service nvargus-daemon restart')
 
 def gstreamer_pipeline(
@@ -36,14 +38,17 @@ def send_picture(frame,lp,delay):
     if frame is not None:
         frame = cv2.resize(frame, (0,0), fx=0.6, fy=0.6)
         cv2.imwrite('temp.jpg',frame)
-        url = 'http://172.28.110.23:8000'
+        url = RPI_URL
         files = {'media': open('temp.jpg', 'rb')}
         values = {'lp':lp}
         try:
             requests.post(url, files=files,data=values,timeout=8)
+            print('I: Finish sending request')
         except requests.ConnectionError:
+            print("E: Connection Error")
             pass
         time.sleep(delay)
+
 
 def check_thread_alive(thr):
     thr.join(timeout=0.0)
@@ -51,6 +56,7 @@ def check_thread_alive(thr):
 
 def calculate_vote(arr):
     results=None
+    print(arr)
     if arr:
         stats={i:arr.count(i) for i in arr}
         results=max(stats, key=lambda key: stats[key])

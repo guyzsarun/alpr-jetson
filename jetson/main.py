@@ -16,6 +16,9 @@ from alpr import detect_plate,accum_vote
 
 delay=10
 
+arr=[]
+detection=0
+
 cap_width=1920
 cap_height=1080
 
@@ -30,21 +33,28 @@ def detect(img):
     return img, detections
 
 
+def clear_arr():
+    global arr
+    global detection
+    time.sleep(8)
+    detection=0
+    arr=[]
+
 def get_bbox(detection):
     num=detection.ClassID
     x1,y1,x2,y2=[int(i) for i in detection.ROI]
     return  num,x1,y1,x2,y2
 
 def main():
+    global arr
+    global detection
     cap = cv2.VideoCapture(gstreamer_pipeline(capture_width=cap_width,capture_height=cap_height,flip_method=2), cv2.CAP_GSTREAMER)
     #cap = cv2.VideoCapture('../video-test2.mp4')
     if cap.isOpened():
         window_handle = cv2.namedWindow("frame", cv2.WINDOW_AUTOSIZE)
 
         fps_i=None
-        detection=0
         empty_frame=0
-        arr=[]
 
         th = threading.Thread(target=send_picture, args=(None,None,delay))
         th.start()
@@ -78,8 +88,9 @@ def main():
                 if not check_thread_alive(th):
                     results,arr=calculate_vote(arr)
                     th = threading.Thread(target=send_picture, args=(frame,results,delay))
+                    cl = threading.Thread(target=clear_arr)
                     th.start()
-                    print(results)
+                    cl.start()
                 else:
                     pass
 
