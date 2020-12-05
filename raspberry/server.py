@@ -24,6 +24,9 @@ def notify():
     lp=request.form['lp']
     file.save('tmp.jpg')
 
+    img = cv2.imread('tmp.jpg')
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)/255
+
     try:
         lp_img, cors = get_plate_rest('tmp.jpg')
     except:
@@ -37,7 +40,7 @@ def notify():
     if lp_img is None:
         line_notify(msg,'tmp.jpg',False)
     else:
-        lp_map_img=lp_mapping('tmp.jpg',lp_img[0])
+        lp_map_img=lp_mapping(img,lp_img[0])
         plt.imsave('lp.jpg',lp_map_img)
         line_notify(msg,'lp.jpg',False)
 
