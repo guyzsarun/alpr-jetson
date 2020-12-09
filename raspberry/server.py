@@ -58,7 +58,6 @@ def post_process(lp,img,img_path):
         line_notify(msg,'lp.jpg',False)
 
 
-
 def encodeFrame():
     global thread_lock
     while True:
@@ -107,9 +106,7 @@ def captureFrames():
 
     video_capture.release()
 
-
 if __name__ == '__main__':
-
     process_thread = threading.Thread(target=captureFrames)
     process_thread.daemon = True
 
