@@ -46,9 +46,9 @@ def post_process(lp,img,img_path):
         lp_img = None
 
     if len(lp)==0:
-        msg="LP : Not detected"
+        msg="Open Gate: http://guyzsarun.southeastasia.cloudapp.azure.com:5000/open \nLP : Not detected"
     else:
-        msg="LP : "+lp
+        msg="Open Gate: http://guyzsarun.southeastasia.cloudapp.azure.com:5000/open \nLP : "+lp
 
     if lp_img is None:
         line_notify(msg,img_path,False)
@@ -56,7 +56,6 @@ def post_process(lp,img,img_path):
         lp_map_img=lp_mapping(img,lp_img[0])
         plt.imsave('lp.jpg',lp_map_img)
         line_notify(msg,'lp.jpg',False)
-
 
 
 def encodeFrame():
@@ -107,9 +106,7 @@ def captureFrames():
 
     video_capture.release()
 
-
 if __name__ == '__main__':
-
     process_thread = threading.Thread(target=captureFrames)
     process_thread.daemon = True
 
