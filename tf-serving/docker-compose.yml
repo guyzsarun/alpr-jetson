@@ -1,10 +1,11 @@
-version: "3.2"
+version: "2.4"
 
 services:
   tf-serving:
     image: tensorflow/serving:latest-gpu
     container_name: tf-serving
     restart: on-failure
+    runtime: nvidia
     volumes:
       - ./models/lp:/models/lp
     expose:
@@ -13,3 +14,7 @@ services:
       - 8501:8501
     environment:
       - MODEL_NAME=lp
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+    command:
+      - '--per_process_gpu_memory_fraction=0.3'
