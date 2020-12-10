@@ -1,21 +1,28 @@
 import threading
 
-import matplotlib.pyplot as plt
-from datetime import datetime
 import cv2
+import requests
+import shutil
+import matplotlib.pyplot as plt
+
+from dynaconf import settings
+from datetime import datetime
 from flask import Response, Flask, request
 from imutils.video import FPS
 from imutils.video import WebcamVideoStream
 
-from utils import line_notify,get_plate_rest,lp_mapping
+from utils import line_notify
 
 global video_frame
 global fps_i
+global thread_lock
+
 fps_i = None
 video_frame = None
-
-global thread_lock
 thread_lock = threading.Lock()
+
+TF_SERVING=settings.TF_SERVING_URL
+AZURE=settings.AZURE_URL
 
 app = Flask(__name__)
 @app.route("/" ,methods = ['POST'])
@@ -23,10 +30,8 @@ def notify():
     file = request.files['media']
     lp=request.form['lp']
     file.save('tmp.jpg')
-    img = cv2.imread('tmp.jpg')
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)/255
 
-    th = threading.Thread(target=post_process,args=(lp,img,'tmp.jpg'))
+    th = threading.Thread(target=post_process,args=(lp,'tmp.jpg'))
     th.start()
     return '200 OK'
 
@@ -34,29 +39,22 @@ def notify():
 def streamFrames():
     return Response(encodeFrame(), mimetype = "multipart/x-mixed-replace; boundary=frame")
 
-@app.route("/open")
-def open_gate():
-    print('open gate')
-    return '200 OK'
-
-def post_process(lp,img,img_path):
-    try:
-        lp_img, cors = get_plate_rest(img_path)
-    except:
-        lp_img = None
-
+def post_process(lp,img_path):
     if len(lp)==0:
-        msg="Open Gate: http://guyzsarun.southeastasia.cloudapp.azure.com:5000/open \nLP : Not detected"
+        msg="Open Gate: "+AZURE+"\nLP : Not detected"
     else:
-        msg="Open Gate: http://guyzsarun.southeastasia.cloudapp.azure.com:5000/open \nLP : "+lp
-
-    if lp_img is None:
-        line_notify(msg,img_path,False)
-    else:
-        lp_map_img=lp_mapping(img,lp_img[0])
-        plt.imsave('lp.jpg',lp_map_img)
-        line_notify(msg,'lp.jpg',False)
-
+        msg="Open Gate: "+AZURE+"\nLP : "+lp
+    try:
+        r=requests.post(TF_SERVING,files={'media':open(img_path,'rb')})
+        if r.status_code==404:
+            line_notify(msg,img_path,False)
+        else:
+            with open('lp.jpg', 'wb') as f:
+                f.write(r.content)
+            line_notify(msg,'lp.jpg',False)
+    except:
+        print("Error sending request")
+        pass
 
 def encodeFrame():
     global thread_lock
@@ -71,6 +69,7 @@ def encodeFrame():
             if fps_i is None:
                 fps_i=0
 
+            #Detection Zone
             cv2.rectangle(video_frame,(30,30),(610,450),(0,0,255),2)
             if fps_i:
                 cv2.putText(video_frame, "FPS: {:.2f}".format(fps_i), (25, 25) , cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,0,255))
@@ -79,10 +78,8 @@ def encodeFrame():
             if not return_key:
                 continue
 
-        # Output image as a byte array
         yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' +
             bytearray(encoded_image) + b'\r\n')
-
 
 def captureFrames():
     global video_frame, thread_lock, fps_i
