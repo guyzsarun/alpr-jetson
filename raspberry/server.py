@@ -10,7 +10,7 @@ from flask import Response, Flask, request
 from imutils.video import FPS
 from imutils.video import WebcamVideoStream
 
-from utils import line_notify,get_plate_rest,lp_mapping
+from utils import line_notify
 
 global video_frame
 global fps_i
