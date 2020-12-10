@@ -9,7 +9,6 @@ import requests
 from datetime import datetime
 import numpy as np
 
-
 URL=settings.URL
 TOKEN=settings.TOKEN
 

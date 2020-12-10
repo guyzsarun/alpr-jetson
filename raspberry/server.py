@@ -1,11 +1,12 @@
 import threading
 
-from dynaconf import settings
+import cv2
 import requests
 import shutil
 import matplotlib.pyplot as plt
+
+from dynaconf import settings
 from datetime import datetime
-import cv2
 from flask import Response, Flask, request
 from imutils.video import FPS
 from imutils.video import WebcamVideoStream
@@ -14,13 +15,14 @@ from utils import line_notify
 
 global video_frame
 global fps_i
+global thread_lock
+
 fps_i = None
 video_frame = None
-
-global thread_lock
 thread_lock = threading.Lock()
 
 TF_SERVING=settings.TF_SERVING_URL
+AZURE=settings.AZURE_URL
 
 app = Flask(__name__)
 @app.route("/" ,methods = ['POST'])
@@ -39,9 +41,9 @@ def streamFrames():
 
 def post_process(lp,img_path):
     if len(lp)==0:
-        msg="Open Gate: http://guyzsarun.southeastasia.cloudapp.azure.com:5000/open \nLP : Not detected"
+        msg="Open Gate: "+AZURE+"\nLP : Not detected"
     else:
-        msg="Open Gate: http://guyzsarun.southeastasia.cloudapp.azure.com:5000/open \nLP : "+lp
+        msg="Open Gate: "+AZURE+"\nLP : "+lp
     try:
         r=requests.post(TF_SERVING,files={'media':open(img_path,'rb')})
         if r.status_code==404:
@@ -67,6 +69,7 @@ def encodeFrame():
             if fps_i is None:
                 fps_i=0
 
+            #Detection Zone
             cv2.rectangle(video_frame,(30,30),(610,450),(0,0,255),2)
             if fps_i:
                 cv2.putText(video_frame, "FPS: {:.2f}".format(fps_i), (25, 25) , cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,0,255))
@@ -75,10 +78,8 @@ def encodeFrame():
             if not return_key:
                 continue
 
-        # Output image as a byte array
         yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' +
             bytearray(encoded_image) + b'\r\n')
-
 
 def captureFrames():
     global video_frame, thread_lock, fps_i

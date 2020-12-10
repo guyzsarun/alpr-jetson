@@ -2,3 +2,4 @@ default:
     url :
     token :
     tf_serving_url :
+    azure_url:
