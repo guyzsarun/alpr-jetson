@@ -43,7 +43,7 @@ def post_process(lp,img_path):
     else:
         msg="Open Gate: http://guyzsarun.southeastasia.cloudapp.azure.com:5000/open \nLP : "+lp
     try:
-        r=requests.post('http://172.28.253.160:8080/predict',files={'media':open(img_path,'rb')})
+        r=requests.post(TF_SERVING,files={'media':open(img_path,'rb')})
         if r.status_code==404:
             line_notify(msg,img_path,False)
         else:
