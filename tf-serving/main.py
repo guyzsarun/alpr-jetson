@@ -1,10 +1,11 @@
-from fastapi import FastAPI,UploadFile,File,Response,status
-import shutil
-import uvicorn
-from utils import get_plate_rest,lp_mapping
-from fastapi.responses import FileResponse
 import cv2
 import matplotlib.pyplot as plt
+import shutil
+import uvicorn
+
+from fastapi import FastAPI,UploadFile,File,Response,status
+from utils import get_plate_rest,lp_mapping
+from fastapi.responses import FileResponse
 
 app = FastAPI()
 
