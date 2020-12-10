@@ -1,5 +1,8 @@
 import threading
 
+from dynaconf import settings
+import requests
+import shutil
 import matplotlib.pyplot as plt
 from datetime import datetime
 import cv2
@@ -17,16 +20,16 @@ video_frame = None
 global thread_lock
 thread_lock = threading.Lock()
 
+TF_SERVING=settings.TF_SERVING_URL
+
 app = Flask(__name__)
 @app.route("/" ,methods = ['POST'])
 def notify():
     file = request.files['media']
     lp=request.form['lp']
     file.save('tmp.jpg')
-    img = cv2.imread('tmp.jpg')
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)/255
 
-    th = threading.Thread(target=post_process,args=(lp,img,'tmp.jpg'))
+    th = threading.Thread(target=post_process,args=(lp,'tmp.jpg'))
     th.start()
     return '200 OK'
 
@@ -34,29 +37,22 @@ def notify():
 def streamFrames():
     return Response(encodeFrame(), mimetype = "multipart/x-mixed-replace; boundary=frame")
 
-@app.route("/open")
-def open_gate():
-    print('open gate')
-    return '200 OK'
-
-def post_process(lp,img,img_path):
-    try:
-        lp_img, cors = get_plate_rest(img_path)
-    except:
-        lp_img = None
-
+def post_process(lp,img_path):
     if len(lp)==0:
         msg="Open Gate: http://guyzsarun.southeastasia.cloudapp.azure.com:5000/open \nLP : Not detected"
     else:
         msg="Open Gate: http://guyzsarun.southeastasia.cloudapp.azure.com:5000/open \nLP : "+lp
-
-    if lp_img is None:
-        line_notify(msg,img_path,False)
-    else:
-        lp_map_img=lp_mapping(img,lp_img[0])
-        plt.imsave('lp.jpg',lp_map_img)
-        line_notify(msg,'lp.jpg',False)
-
+    try:
+        r=requests.post('http://172.28.253.160:8080/predict',files={'media':open(img_path,'rb')})
+        if r.status_code==404:
+            line_notify(msg,img_path,False)
+        else:
+            with open('lp.jpg', 'wb') as f:
+                f.write(r.content)
+            line_notify(msg,'lp.jpg',False)
+    except:
+        print("Error sending request")
+        pass
 
 def encodeFrame():
     global thread_lock

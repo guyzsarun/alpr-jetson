@@ -9,15 +9,10 @@ import requests
 from datetime import datetime
 import numpy as np
 
-
-URL=settings.URL
-TOKEN=settings.TOKEN
 TF_SERVING=settings.TF_SERVING_URL
 
 bf=cv2.BFMatcher()
 sift=cv2.xfeatures2d.SIFT_create()
-
-headers = {"Authorization": "Bearer " + TOKEN}
 
 def lp_mapping(img,lp):
     lp=np.float32(lp)
@@ -38,14 +33,6 @@ def lp_mapping(img,lp):
             good.append([match1])
 
     return cv2.drawMatchesKnn(np.uint8(lp*255),kp1,np.uint8(img*255),kp2,good,None,flags=2)/255
-
-def line_notify(msg, payload=None, notifyDisable=False):
-    if msg is None:
-        msg = datetime.now()
-    msg = {"message": msg, "notificationDisabled": notifyDisable}
-    if payload != None:
-        payload = {"imageFile": open(payload, "rb")}
-    return requests.post(URL, headers=headers, params=msg, files=payload)
 
 def get_plate_rest(image_path, Dmax=608, Dmin=256):
     vehicle = preprocess_image(image_path)
