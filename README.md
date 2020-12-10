@@ -1,10 +1,10 @@
 # ALPR-IoT
 
-
+ALPR using Nvidia Jetson Nano and Raspberry Pi for (2147336) Internet of Things
 
 ## Components
 ---
-- Jetson Nano
+- Nvidia Jetson Nano
 - STM32F411RE
 - Raspberry Pi4 x 2
 - Azure VM
