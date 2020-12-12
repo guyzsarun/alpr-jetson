@@ -55,7 +55,7 @@ def check_thread_alive(thr):
     return thr.is_alive()
 
 def calculate_vote(arr):
-    results=None
+    results=""
     print(arr)
     if arr:
         stats={i:arr.count(i) for i in arr}
