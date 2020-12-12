@@ -57,7 +57,7 @@ def post_process(lp,img_path):
         pass
 
 def encodeFrame():
-    global thread_lock
+    global thread_lock,fps_i
     while True:
         # Acquire thread_lock to access the global video_frame object
         with thread_lock:
@@ -65,7 +65,6 @@ def encodeFrame():
             if video_frame is None:
                 continue
 
-            global fps_i
             if fps_i is None:
                 fps_i=0
 
@@ -88,6 +87,7 @@ def captureFrames():
     video_capture = cv2.VideoCapture(0)
 
     while True :
+        fps = FPS().start()
         ret,frame = video_capture.read()
 
         if frame is None:
@@ -100,7 +100,9 @@ def captureFrames():
         key = cv2.waitKey(30) & 0xff
         if key == 27:
             break
-
+        fps.update()
+        fps.stop()
+        fps_i=fps.fps()
     video_capture.release()
 
 if __name__ == '__main__':
